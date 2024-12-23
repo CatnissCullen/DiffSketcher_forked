@@ -10,8 +10,8 @@ Synthesis through Latent Diffusion Models, which can generate high-quality vecto
 
 > Our Project Page: https://ximinng.github.io/DiffSketcher-project/
 
-![teaser1](./img/teaser1.png)
-![teaser2](./img/teaser2.png)
+![teaser1](img/teaser1.png)
+![teaser2](img/teaser2.png)
 
 **DiffSketcher Rendering Process:**
 

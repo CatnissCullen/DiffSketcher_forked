@@ -286,6 +286,7 @@ class Token2AttnMixinASDSPipeline(StableDiffusionPipeline):
         )
 
         # timestep ~ U(0.02, 0.98) to avoid very high/low noise level
+        # min_step = 2, max_step = 98
         t = torch.randint(min_step, max_step + 1, [1], dtype=torch.long, device=self.device)
 
         # predict the noise residual with unet, stop gradient
@@ -308,7 +309,7 @@ class Token2AttnMixinASDSPipeline(StableDiffusionPipeline):
         grad = torch.nan_to_num(grad)
 
         # since we omitted an item in grad, we need to use the custom function to specify the gradient
-        loss = SpecifyGradient.apply(latents, grad)
+        loss =  SpecifyGradient.apply(latents, grad)
 
         return loss, grad.mean()
 

@@ -15,20 +15,20 @@ import numpy as np
 from skimage.color import rgb2gray
 import diffusers
 
-from libs.engine import ModelState
-from libs.metric.lpips_origin import LPIPS
-from libs.metric.piq.perceptual import DISTS as DISTS_PIQ
-from libs.metric.clip_score import CLIPScoreWrapper
-from methods.painter.diffsketcher import (
+from DiffSketcher.libs.engine import ModelState
+from DiffSketcher.libs.metric.lpips_origin import LPIPS
+from DiffSketcher.libs.metric.piq.perceptual import DISTS as DISTS_PIQ
+from DiffSketcher.libs.metric.clip_score import CLIPScoreWrapper
+from DiffSketcher.methods.painter.diffsketcher import (
     Painter, SketchPainterOptimizer, Token2AttnMixinASDSPipeline, Token2AttnMixinASDSSDXLPipeline)
-from methods.painter.diffsketcher.sketch_utils import (
+from DiffSketcher.methods.painter.diffsketcher.sketch_utils import (
     log_tensor_img, plt_batch, plt_attn, save_tensor_img, fix_image_scale)
-from methods.painter.diffsketcher.mask_utils import get_mask_u2net
-from methods.token2attn.attn_control import AttentionStore, EmptyControl
-from methods.token2attn.ptp_utils import view_images
-from methods.diffusers_warp import init_diffusion_pipeline, model2res
-from methods.diffvg_warp import init_diffvg
-from methods.painter.diffsketcher.process_svg import remove_low_opacity_paths
+from DiffSketcher.methods.painter.diffsketcher.mask_utils import get_mask_u2net
+from DiffSketcher.methods.token2attn.attn_control import AttentionStore, EmptyControl
+from DiffSketcher.methods.token2attn.ptp_utils import view_images
+from DiffSketcher.methods.diffusers_warp import init_diffusion_pipeline, model2res
+from DiffSketcher.methods.diffvg_warp import init_diffvg
+from DiffSketcher.methods.painter.diffsketcher.process_svg import remove_low_opacity_paths
 
 
 class DiffSketcherPipeline(ModelState):
@@ -260,6 +260,7 @@ class DiffSketcherPipeline(ModelState):
         self.print("inputs shape: ", inputs.shape)
 
         # load renderer
+        """ need GT attention map & foreground mask """
         renderer = Painter(self.args,
                            num_strokes=self.args.num_paths,
                            num_segments=self.args.num_segments,
@@ -351,6 +352,7 @@ class DiffSketcherPipeline(ModelState):
 
                 # total loss
                 loss = sds_loss + total_visual_loss + l_percep + l_tvd
+                # Loss = ASDS + CLIPVisual-VisualLoss + LPIPS + CLIPText-VisualLoss
 
                 # optimization
                 optimizer.zero_grad_()

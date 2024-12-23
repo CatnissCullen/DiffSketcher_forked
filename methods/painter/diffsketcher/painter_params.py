@@ -23,8 +23,8 @@ class Painter(nn.Module):
             imsize=224,
             device=None,
             target_im=None,
-            attention_map=None,
-            mask=None,
+            attention_map=None,  # attention map from LDM(prompt)
+            mask=None,  # foreground mask from U2net(GT)
     ):
         super(Painter, self).__init__()
 
@@ -67,6 +67,7 @@ class Painter(nn.Module):
         self.strokes_counter = 0  # counts the number of calls to "get_path"
 
     def init_image(self, stage=0):
+        """ INIT. CANVAS ACCORDING TO SAMPLED CONTROL POINTS (path) """
         if stage > 0:
             # Noting: if multi stages training than add new strokes on existing ones
             # don't optimize on previous strokes
@@ -74,7 +75,7 @@ class Painter(nn.Module):
             for i in range(self.strokes_per_stage):
                 stroke_color = torch.FloatTensor(np.random.uniform(size=[4])) \
                     if self.args.optim_rgba else torch.tensor([0.0, 0.0, 0.0, 1.0])
-                path = self.get_path()
+                path = self.get_path()  # SVGs
                 self.shapes.append(path)
                 path_group = pydiffvg.ShapeGroup(shape_ids=torch.tensor([len(self.shapes) - 1]),
                                                  fill_color=None,
@@ -93,7 +94,7 @@ class Painter(nn.Module):
             for i in range(num_paths_exists, self.num_paths):
                 stroke_color = torch.FloatTensor(np.random.uniform(size=[4])) \
                     if self.args.optim_rgba else torch.tensor([0.0, 0.0, 0.0, 1.0])
-                path = self.get_path()
+                path = self.get_path()  # SVGs
                 self.shapes.append(path)
                 path_group = pydiffvg.ShapeGroup(shape_ids=torch.tensor([len(self.shapes) - 1]),
                                                  fill_color=None,
@@ -121,6 +122,7 @@ class Painter(nn.Module):
         return img
 
     def get_path(self):
+        """ GENERATE INITIAL PATH-SVGs WITH SAMPLES CONTROL POINTS """
         self.num_control_points = torch.zeros(self.num_segments, dtype=torch.int32) + (self.control_points_per_seg - 2)
         points = []
         p0 = self.inds_normalised[self.strokes_counter] if self.attention_init else (random.random(), random.random())
@@ -228,6 +230,7 @@ class Painter(nn.Module):
         return e_x / e_x.sum()
 
     def set_inds_ldm(self):
+        """ COMPUTE ATTENTION MAP DISTRIBUTION """
         attn_map = (self.attention_map - self.attention_map.min()) / \
                    (self.attention_map.max() - self.attention_map.min())
 
@@ -241,6 +244,7 @@ class Painter(nn.Module):
         attn_map_soft = np.copy(attn_map)
         attn_map_soft[attn_map > 0] = self.softmax(attn_map[attn_map > 0], tau=self.softmax_temp)
 
+        """ SAMPLE CONTROL POINTS AS INITIALIZATION """
         # select points
         k = self.num_stages * self.num_paths
         self.inds = np.random.choice(range(attn_map.flatten().shape[0]),

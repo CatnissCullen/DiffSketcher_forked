@@ -9,7 +9,7 @@ from packaging import version
 
 import torch
 from diffusers import StableDiffusionPipeline, SchedulerMixin, DiffusionPipeline
-from diffusers.utils import is_torch_version, is_xformers_available
+from diffusers.utils import is_torch_version
 
 huggingface_model_dict = OrderedDict({
     "sd14": "CompVis/stable-diffusion-v1-4",  # resolution: 512
@@ -110,20 +110,17 @@ def init_diffusion_pipeline(model_id: AnyStr,
 
     # Meta xformers
     if enable_xformers:
-        if is_xformers_available():
-            import xformers
+        import xformers
 
-            xformers_version = version.parse(xformers.__version__)
-            if xformers_version == version.parse("0.0.16"):
-                print(
-                    "xFormers 0.0.16 cannot be used for training in some GPUs. "
-                    "If you observe problems during training, please update xFormers to at least 0.0.17. "
-                    "See https://huggingface.co/docs/diffusers/main/en/optimization/xformers for more details."
-                )
-            print(f"=> enable xformers")
-            pipeline.unet.enable_xformers_memory_efficient_attention()
-        else:
-            print(f"=> warning: calling xformers failed")
+        xformers_version = version.parse(xformers.__version__)
+        if xformers_version == version.parse("0.0.16"):
+            print(
+                "xFormers 0.0.16 cannot be used for training in some GPUs. "
+                "If you observe problems during training, please update xFormers to at least 0.0.17. "
+                "See https://huggingface.co/docs/diffusers/main/en/optimization/xformers for more details."
+            )
+        print(f"=> enable xformers")
+        pipeline.unet.enable_xformers_memory_efficient_attention()
 
     # gradient checkpointing
     if gradient_checkpoint:
